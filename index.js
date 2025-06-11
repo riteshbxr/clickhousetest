@@ -35,9 +35,33 @@ async function findOnClickhouse(query) {
     return data.json();
 }
 
+async function createTable(){
+    /**
+     * Ensure you have access to create
+     * Create user testFake IDENTIFIED WITH plaintext_password BY 'qwerty'
+     * GRANT SELECT(id,userId), create table, DROP TABLE, INSERT ON contactsV2test TO testFake
+     */
+    await clickHouseClient.command({
+        query: `
+      CREATE Table if not exists  contactsV2test
+      (
+        id                     UUID,
+        userId                 UUID
+      )
+        ENGINE = ReplacingMergeTree ORDER BY (userId, id)
+    `,
+    });
+    await clickHouseClient.command({
+        query: `
+      INSERT INTO contactsV2test (id, userId)
+      VALUES ( '123e4567-e89b-12d3-a456-426614174000', '1f690529-ee3e-45fa-b302-e70b9d508248'),
+           ( '223e4567-e89b-12d3-a456-426614174001', '1f690529-ee3e-45fa-b302-e70b9d508248');
+    `,
+    });
+}
 async function test() {
     const query = `
-        select  id from contactsV2c FINAL 
+        select  id from contactsV2test FINAL 
         where userId='1f690529-ee3e-45fa-b302-e70b9d508248' limit 2`;
     const resultWithoutUnion = await findOnClickhouse(query);
     console.log(resultWithoutUnion);
@@ -54,4 +78,7 @@ async function test() {
     console.log(resultUnionDistinct);
 }
 
-test().then(() => console.log("done"));
+
+createTable()
+.then(()=>test())
+.then(() => console.log("done"));

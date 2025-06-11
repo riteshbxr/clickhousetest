@@ -1,6 +1,11 @@
 require("dotenv").config();
 const { createClient } = require("@clickhouse/client");
 
+if (!process.env.host) {
+    console.log("Please add envs for clickhouse");
+    process.exit(1);
+}
+
 const clickhouseCredentials = {
     host: process.env.host,
     password: process.env.password,
@@ -27,7 +32,7 @@ const clickHouseClient = createClient({
  */
 async function findOnClickhouse(query) {
     const data = await clickHouseClient.query({ query, format: "JSONEachRow" });
-    return data.text();
+    return data.json();
 }
 
 async function test() {
